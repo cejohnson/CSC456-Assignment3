@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 
 	
 	//****************************************************//
-	printf("===== Simulator configuration =====\n");
+	printf("===== 456 DSM (MESI with Full-bit Vector Simulator Configuration =====\n");
 	//*******print out simulator configuration here*******//
 	printf("%-23s%d\n", "L1_SIZE:", cache_size);
 	printf("%-23s%d\n", "L1_ASSOC:", cache_assoc);

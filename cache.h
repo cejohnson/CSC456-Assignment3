@@ -46,7 +46,7 @@ class Cache
 protected:
    ulong size, lineSize, assoc, sets, log2Sets, log2Blk, tagMask, numLines;
    ulong reads,readMisses,writes,writeMisses,writeBacks;
-   ulong memoryTransactions, cacheToCacheTransfers;
+   ulong invalidations, cacheToCacheTransfers;
 
    //******///
    //add coherence counters here///

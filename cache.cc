@@ -29,7 +29,7 @@ Cache::Cache(int s,int a,int b )
    //initialize your counters here//
    //*******************//
 
-   memoryTransactions = cacheToCacheTransfers = 0;
+   invalidations = cacheToCacheTransfers = 0;
  
    tagMask =0;
    for(i=0;i<log2Sets;i++)
@@ -169,6 +169,6 @@ void Cache::printStats()
    printf("%-50s%lu\n", "04. number of write misses:", writeMisses);
    printf("%-50s%lf\n", "05. total miss rate:", missRate);
    printf("%-50s%lu\n", "06. number of writebacks:", writeBacks);
-   printf("%-50s%lu\n", "07. number of memory transactions:", memoryTransactions);
+   printf("%-50s%lu\n", "07. number of invalidations:", invalidations);
    printf("%-50s%lu\n", "08. number of cache to cache transfers:", cacheToCacheTransfers);
 }
