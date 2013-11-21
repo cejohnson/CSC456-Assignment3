@@ -21,7 +21,8 @@ int main(int argc, char *argv[])
 
 	if(argv[1] == NULL){
 		 printf("input format: ");
-		 printf("./smp_cache <cache_size> <assoc> <block_size> <num_processors> <protocol> <trace_file> \n");
+		 //printf("./smp_cache <cache_size> <assoc> <block_size> <num_processors> <protocol> <trace_file> \n");
+		 printf("./smp_cache <cache_size> <assoc> <block_size> <num_processors> <trace_file> \n");
 		 exit(0);
         }
 
@@ -48,11 +49,9 @@ int main(int argc, char *argv[])
 
  
 	//*********************************************//
-        //*****create an array of caches here**********//
+  //*****create an array of caches here**********//
  	Cache* cachesArray[num_processors];
  	for (int i = 0; i < num_processors; i++) {
- 		//Cache* cache = new Cache(cache_size, cache_assoc, blk_size);
- 		//*(cachesArray + i*sizeof(Cache)) = *(new Cache(cache_size, cache_assoc, blk_size));
  		cachesArray[i] = new Cache(cache_size, cache_assoc, blk_size);
  	}
 
