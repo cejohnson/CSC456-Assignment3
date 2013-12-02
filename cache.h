@@ -16,21 +16,24 @@ typedef unsigned char uchar;
 typedef unsigned int uint;
 
 /****add new states, based on the protocol****/
-enum{
-	INVALID = 0,
-	VALID,
-	DIRTY
+enum cacheStates {
+  MODIFIED = 0,
+  EXCLUSIVE,
+  SHARED,
+  INVALID
 };
+
+class Directory;
 
 class cacheLine 
 {
 protected:
    ulong tag;
-   ulong Flags;   // 0:invalid, 1:valid, 2:dirty 
+   ulong Flags;   // 0:modified, 1:exclusive, 2:shared, 3:invalid
    ulong seq; 
  
 public:
-   cacheLine()            { tag = 0; Flags = 0; }
+   cacheLine()            { tag = 0; Flags = INVALID; }
    ulong getTag()         { return tag; }
    ulong getFlags()			{ return Flags;}
    ulong getSeq()         { return seq; }
@@ -47,6 +50,7 @@ protected:
    ulong size, lineSize, assoc, sets, log2Sets, log2Blk, tagMask, numLines;
    ulong reads,readMisses,writes,writeMisses,writeBacks;
    ulong invalidations, cacheToCacheTransfers;
+   ulong processor_number;
 
    //******///
    //add coherence counters here///
@@ -60,11 +64,11 @@ protected:
 public:
     ulong currentCycle;  
      
-    Cache(int,int,int);
+    Cache(int,int,int,int);
    ~Cache() { delete cache;}
    
    cacheLine *findLineToReplace(ulong addr);
-   cacheLine *fillLine(ulong addr);
+   cacheLine *fillLine(ulong addr, Directory* directory);
    cacheLine * findLine(ulong addr);
    cacheLine * getLRU(ulong);
    
@@ -73,9 +77,13 @@ public:
    ulong getWB(){return writeBacks;}
    
    void writeBack(ulong)   {writeBacks++;}
-   void Access(ulong,uchar);
+   void Access(ulong,uchar,Cache**,Directory*);
    void printStats();
    void updateLRU(cacheLine *);
+
+   void Invalidate(ulong);
+   void Intervent(ulong);
+   void CacheToCacheTransfer() { cacheToCacheTransfers++; }
 
    //******///
    //add other functions to handle bus transactions///

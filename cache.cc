@@ -9,13 +9,16 @@
 #include <assert.h>
 #include <stdio.h>
 #include "cache.h"
+#include "directory.h"
 using namespace std;
 
-Cache::Cache(int s,int a,int b )
+Cache::Cache(int s,int a,int b, int n )
 {
    ulong i, j;
    reads = readMisses = writes = 0; 
    writeMisses = writeBacks = currentCycle = 0;
+   
+   processor_number = (ulong)(n);
 
    size       = (ulong)(s);
    lineSize   = (ulong)(b);
@@ -47,37 +50,76 @@ Cache::Cache(int s,int a,int b )
       {
 	   cache[i][j].invalidate();
       }
-   }      
-   
+   }
 }
 
 /**you might add other parameters to Access()
 since this function is an entry point 
 to the memory hierarchy (i.e. caches)**/
-void Cache::Access(ulong addr,uchar op)
+void Cache::Access(ulong addr, uchar op, Cache **cachesArray, Directory *directory)
 {
 	currentCycle++;/*per cache global counter to maintain LRU order 
 			among cache ways, updated on every cache access*/
         	
-	if(op == 'w') writes++;
+   if(op == 'w') writes++;
 	else          reads++;
 	
 	cacheLine * line = findLine(addr);
+   ulong state;
+
+
 	if(line == NULL)/*miss*/
 	{
-		if(op == 'w') writeMisses++;
-		else readMisses++;
+      if(op == 'w') {
 
-		cacheLine *newline = fillLine(addr);
-   		if(op == 'w') newline->setFlags(DIRTY);    
+         writeMisses++;
+         directory->ReadX(addr, processor_number, cachesArray);
+         state = MODIFIED;
+      }
+		else {
+         readMisses++;
+         state = directory->Read(addr, processor_number, cachesArray); //Returns whether or not the line is shared
+
+      }
+
+		cacheLine *newline = fillLine(addr, directory);
+   	newline->setFlags(state);
+
 		
 	}
-	else
+	else //Hit
 	{
-		/**since it's a hit, update LRU and update dirty flag**/
+      /**since it's a hit, update LRU and update dirty flag**/
+
 		updateLRU(line);
-		if(op == 'w') line->setFlags(DIRTY);
+      assert(line->getFlags() != INVALID);
+		if(op == 'w') {
+         state = line->getFlags();
+         if (state == SHARED) {
+
+            directory->Upgrade(addr, processor_number, cachesArray);
+         }
+         line->setFlags(MODIFIED);
+      }
 	}
+}
+
+//Find address and invalidate cacheLine containing it
+void Cache::Invalidate(ulong addr) {
+   cacheLine *line = findLine(addr);
+   assert(line != NULL);
+   if(line != NULL) {
+      line->invalidate();
+      invalidations++;
+   }
+}
+
+//Find address and intervent cacheLine containing it
+void Cache::Intervent(ulong addr) {
+   cacheLine *line = findLine(addr);
+   assert(line != NULL);
+   if(line != NULL)
+      line->setFlags(SHARED);
 }
 
 /*look up line*/
@@ -139,17 +181,24 @@ cacheLine *Cache::findLineToReplace(ulong addr)
 }
 
 /*allocate a new line*/
-cacheLine *Cache::fillLine(ulong addr)
+cacheLine *Cache::fillLine(ulong addr, Directory* directory)
 { 
+
    ulong tag;
   
    cacheLine *victim = findLineToReplace(addr);
    assert(victim != 0);
-   if(victim->getFlags() == DIRTY) writeBack(addr);
+
+   // If victim is MODIFIED it needs to be written back
+   if(victim->getFlags() == MODIFIED)
+      writeBack(addr);
+   
+   // If victim is not INVALID, notify the directory that it is being evicted
+   if(victim->getFlags() != INVALID)
+      directory->UnCache(calcAddr4Tag(victim->getTag()), processor_number);
     	
    tag = calcTag(addr);   
    victim->setTag(tag);
-   victim->setFlags(VALID);    
    /**note that this cache line has been already 
       upgraded to MRU in the previous function (findLineToReplace)**/
 

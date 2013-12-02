@@ -12,6 +12,7 @@
 using namespace std;
 
 #include "cache.h"
+#include "directory.h"
 
 int main(int argc, char *argv[])
 {
@@ -50,10 +51,13 @@ int main(int argc, char *argv[])
  
 	//*********************************************//
   //*****create an array of caches here**********//
- 	Cache* cachesArray[num_processors];
+ 	Cache *cachesArray[num_processors];
  	for (int i = 0; i < num_processors; i++) {
- 		cachesArray[i] = new Cache(cache_size, cache_assoc, blk_size);
+ 		cachesArray[i] = new Cache(cache_size, cache_assoc, blk_size, i);
  	}
+
+ 	//*****Create the directory*****//
+ 	Directory *directory = new Directory(cache_size, blk_size, num_processors);
 
 	//*********************************************//	
 
@@ -74,7 +78,7 @@ int main(int argc, char *argv[])
 	ulong address;
 
 	while (fscanf(pFile, "%i %c %lx", &processor_number, &op, &address) == 3) {
-		cachesArray[processor_number]->Access(address, op);
+		cachesArray[processor_number]->Access(address, op, cachesArray, directory);
 	}
 
 
